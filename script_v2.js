@@ -99,7 +99,7 @@ function calculateV2() {
                 nationalHealth = Math.max(30000, Math.round(Math.max(0, earnedIncome - 430000) * 0.08));
             }
             if (isOver20) {
-                const annualPension = taxYear === '2025' ? 17510 * 12 : 17920 * 12;
+                const annualPension = taxYear === '2025' ? 16980 * 3 + 17510 * 9 : 17510 * 3 + 17920 * 9; // 保険料改定は4月のため暦年分を月割り
                 nationalPension = isStudentExemption ? 0 : annualPension;
             }
         }

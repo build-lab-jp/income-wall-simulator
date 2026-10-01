@@ -46,19 +46,21 @@
     <h2>大学生向け 年収・世帯手取りシミュレーター</h2>
     <p>給与収入をもとに、本人の所得税・保険料と、親の所得税控除の変化を概算します。基準年収100万円のケースと比較します。</p>
 
+    <form id="calculatorForm" novalidate>
+    <div id="inputError" class="notice" role="alert" tabindex="-1" hidden></div>
     <div class="input-group">
         <label for="currentIncome">今年これまでに受け取った給与の合計（円）</label>
-        <input type="number" id="currentIncome" min="0" step="1" inputmode="numeric" placeholder="例：900000">
+        <input type="number" id="currentIncome" min="0" step="1" required aria-describedby="inputError" inputmode="numeric" placeholder="例：900000">
         <small class="hint">複数のアルバイト先がある場合は合計してください。賞与なども含めます。</small>
     </div>
     <div class="input-group">
         <label for="elapsedMonths">給与を受け取った月数</label>
-        <input type="number" id="elapsedMonths" min="1" max="12" step="1" inputmode="numeric" placeholder="例：8">
+        <input type="number" id="elapsedMonths" min="1" max="12" step="1" required aria-describedby="inputError" inputmode="numeric" placeholder="例：8">
         <small class="hint">これまでの月平均が年末まで続くものとして予測します。</small>
     </div>
     <div class="input-group">
         <label for="ageAtYearEnd">本人の年齢（その年の12月31日時点）</label>
-        <input type="number" id="ageAtYearEnd" min="0" max="120" step="1" inputmode="numeric" placeholder="例：20">
+        <input type="number" id="ageAtYearEnd" min="0" max="120" step="1" required aria-describedby="inputError" inputmode="numeric" placeholder="例：20">
         <small class="hint">扶養控除の判定に使います。誕生日前でも、その年の12月31日時点の年齢を入力してください。</small>
     </div>
     <div class="input-group" id="birthMonthGroup" hidden>
@@ -126,10 +128,11 @@
         </details>
     </div>
 
-    <button type="button" onclick="calculateV2()">世帯への影響を試算</button>
+    <button type="submit">世帯への影響を試算</button>
+    </form>
 
     <div id="resultV2" aria-live="polite">
-        <h3 style="margin-top:0">試算結果</h3>
+        <h3 style="margin-top:0" tabindex="-1">試算結果</h3>
         <div class="section-title">本人の税・保険</div>
         <div id="personalResultText" class="result-box"></div>
         <div class="section-title">親の税控除への影響</div>
@@ -158,18 +161,5 @@
     </div>
 </div>
 <script src="script_v2.js"></script>
-<script>
-const ageInput = document.getElementById('ageAtYearEnd');
-const birthGroup = document.getElementById('birthMonthGroup');
-const birthMonth = document.getElementById('birthMonth');
-for (let month = 1; month <= 12; month++) birthMonth.add(new Option(`${month}月`, month));
-function updateBirthMonthVisibility() {
-    const needsBirthMonth = ageInput.value === '20' || ageInput.value === '60';
-    birthGroup.hidden = !needsBirthMonth;
-    birthMonth.required = needsBirthMonth;
-}
-ageInput.addEventListener('input', updateBirthMonthVisibility);
-updateBirthMonthVisibility();
-</script>
 </body>
 </html>

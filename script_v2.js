@@ -1,4 +1,34 @@
-function calculateV2() {
+const calculatorForm = document.getElementById('calculatorForm');
+const inputError = document.getElementById('inputError');
+const ageInput = document.getElementById('ageAtYearEnd');
+const birthGroup = document.getElementById('birthMonthGroup');
+const birthMonthSelect = document.getElementById('birthMonth');
+
+for (let month = 1; month <= 12; month++) {
+    birthMonthSelect.add(new Option(`${month}月`, month));
+}
+
+function updateBirthMonthVisibility() {
+    const needsBirthMonth = ageInput.value === '20' || ageInput.value === '60';
+    birthGroup.hidden = !needsBirthMonth;
+    birthMonthSelect.required = needsBirthMonth;
+}
+
+function showInputError(message, focusTargetId) {
+    inputError.textContent = message;
+    inputError.hidden = !message;
+    if (focusTargetId) document.getElementById(focusTargetId).focus();
+}
+
+ageInput.addEventListener('input', updateBirthMonthVisibility);
+calculatorForm.addEventListener('input', () => showInputError(''));
+calculatorForm.addEventListener('change', () => showInputError(''));
+calculatorForm.addEventListener('submit', calculateV2);
+updateBirthMonthVisibility();
+
+function calculateV2(event) {
+    event.preventDefault();
+    showInputError('');
     const incomeText = document.getElementById('currentIncome').value.trim();
     const monthsText = document.getElementById('elapsedMonths').value.trim();
     const incomeToDate = Number(incomeText);
@@ -16,16 +46,24 @@ function calculateV2() {
     const isStudentExemption = document.getElementById('isStudentExemption').checked;
     const isWorkStudent = document.getElementById('isWorkStudent').checked;
 
-    if (!incomeText || !monthsText || !Number.isFinite(incomeToDate) || !Number.isFinite(monthsElapsed) || incomeToDate < 0 || !Number.isInteger(monthsElapsed) || monthsElapsed < 1 || monthsElapsed > 12 || !ageText || !Number.isInteger(ageAtYearEnd) || ageAtYearEnd < 0 || ageAtYearEnd > 120) {
-        alert('給与の合計・経過月数・年末時点の年齢を正しく入力してください。');
+    if (!incomeText || !Number.isFinite(incomeToDate) || !Number.isInteger(incomeToDate) || incomeToDate < 0) {
+        showInputError('給与の合計を0円以上の整数で入力してください。', 'currentIncome');
+        return;
+    }
+    if (!monthsText || !Number.isInteger(monthsElapsed) || monthsElapsed < 1 || monthsElapsed > 12) {
+        showInputError('給与を受け取った月数を1〜12の整数で入力してください。', 'elapsedMonths');
+        return;
+    }
+    if (!ageText || !Number.isInteger(ageAtYearEnd) || ageAtYearEnd < 0 || ageAtYearEnd > 120) {
+        showInputError('12月31日時点の年齢を0〜120の整数で入力してください。', 'ageAtYearEnd');
         return;
     }
     if ((ageAtYearEnd === 20 || ageAtYearEnd === 60) && (!Number.isInteger(birthMonth) || birthMonth < 1 || birthMonth > 12)) {
-        alert('年末時点で20歳または60歳の方は誕生月を選択してください。');
+        showInputError('年末時点で20歳または60歳の方は誕生月を選択してください。', 'birthMonth');
         return;
     }
     if ((ageAtYearEnd < 20 || ageAtYearEnd >= 60) && isStudentExemption) {
-        alert('学生納付特例は20歳以上60歳未満の方が対象です。チェックを外してください。')
+        showInputError('学生納付特例は20歳以上60歳未満の方が対象です。年齢とチェックを確認してください。', 'isStudentExemption');
         return;
     }
 
@@ -222,5 +260,6 @@ function calculateV2() {
     document.getElementById('parentResultText').innerHTML = parentHtml;
     document.getElementById('householdResultText').innerHTML = comparisonHtml;
     document.getElementById('resultV2').style.display = 'block';
+    document.querySelector('#resultV2 h3').focus();
 }
 

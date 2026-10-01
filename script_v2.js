@@ -3,22 +3,29 @@ function calculateV2() {
     const monthsText = document.getElementById('elapsedMonths').value.trim();
     const incomeToDate = Number(incomeText);
     const monthsElapsed = Number(monthsText);
-    const ageGroup = document.getElementById('ageGroup').value;
+    const ageText = document.getElementById('ageAtYearEnd').value.trim();
+    const ageAtYearEnd = Number(ageText);
+    const birthMonth = Number(document.getElementById('birthMonth').value);
+    const birthdayIsFirst = document.getElementById('birthdayIsFirst').checked;
+    const ageGroup = ageAtYearEnd <= 15 ? 'under16' : ageAtYearEnd <= 18 ? '16_18' : ageAtYearEnd <= 22 ? '19_22' : ageAtYearEnd <= 69 ? '23_69' : '70plus';
     const taxYear = document.getElementById('taxYear').value;
     const parentTaxRate = Number(document.getElementById('parentTaxRate').value);
     const isTaxDependent = document.getElementById('isTaxDependent').checked;
     const isHealthDependent = document.getElementById('isHealthDependent').checked;
     const isCompanyInsured = document.getElementById('isCompanyInsured').checked;
-    const isOver20 = document.getElementById('isOver20').checked || ageGroup === '23_69' || ageGroup === '70plus';
     const isStudentExemption = document.getElementById('isStudentExemption').checked;
     const isWorkStudent = document.getElementById('isWorkStudent').checked;
 
-    if (!incomeText || !monthsText || !Number.isFinite(incomeToDate) || !Number.isFinite(monthsElapsed) || incomeToDate < 0 || !Number.isInteger(monthsElapsed) || monthsElapsed < 1 || monthsElapsed > 12) {
-        alert('給与の合計と経過月数を正しく入力してください。');
+    if (!incomeText || !monthsText || !Number.isFinite(incomeToDate) || !Number.isFinite(monthsElapsed) || incomeToDate < 0 || !Number.isInteger(monthsElapsed) || monthsElapsed < 1 || monthsElapsed > 12 || !ageText || !Number.isInteger(ageAtYearEnd) || ageAtYearEnd < 0 || ageAtYearEnd > 120) {
+        alert('給与の合計・経過月数・年末時点の年齢を正しく入力してください。');
         return;
     }
-    if (ageGroup === '19_22' && !isOver20 && isStudentExemption) {
-        alert('学生納付特例は20歳以上の方が対象です。年齢の選択を確認してください。');
+    if (ageAtYearEnd === 20 && (!Number.isInteger(birthMonth) || birthMonth < 1 || birthMonth > 12)) {
+        alert('年末時点で20歳の方は誕生月を選択してください。');
+        return;
+    }
+    if (ageAtYearEnd < 20 && isStudentExemption) {
+        alert('学生納付特例は20歳以上の方が対象です。チェックを外してください。')
         return;
     }
 
@@ -87,6 +94,7 @@ function calculateV2() {
         let employeeInsurance = 0;
         let nationalHealth = 0;
         let nationalPension = 0;
+        let pensionMonths = 0;
         const dependentHealthLimit = ageGroup === '19_22' ? 1500000 : 1300000;
         const healthDependentLost = isHealthDependent && gross >= dependentHealthLimit;
 
@@ -98,9 +106,17 @@ function calculateV2() {
                 // 国保料は自治体・前年所得等で異なるため、所得割の単純な参考値。
                 nationalHealth = Math.max(30000, Math.round(Math.max(0, earnedIncome - 430000) * 0.08));
             }
-            if (isOver20) {
-                const annualPension = taxYear === '2025' ? 16980 * 3 + 17510 * 9 : 17510 * 3 + 17920 * 9; // 保険料改定は4月のため暦年分を月割り
-                nationalPension = isStudentExemption ? 0 : annualPension;
+            const pensionStartMonth = ageAtYearEnd < 20 || ageAtYearEnd >= 60
+                ? null
+                : ageAtYearEnd === 20
+                    ? (birthdayIsFirst ? birthMonth - 1 : birthMonth)
+                    : 1;
+            if (pensionStartMonth !== null) {
+                const monthlyRate = month => taxYear === '2025' ? (month <= 3 ? 16980 : 17510) : (month <= 3 ? 17510 : 17920);
+                const firstMonthInYear = Math.max(1, pensionStartMonth);
+                pensionMonths = 13 - firstMonthInYear;
+                const pensionForYear = Array.from({length: 13 - firstMonthInYear}, (_, i) => monthlyRate(firstMonthInYear + i)).reduce((sum, rate) => sum + rate, 0);
+                nationalPension = isStudentExemption ? 0 : pensionForYear;
             }
         }
 
@@ -112,7 +128,7 @@ function calculateV2() {
             gross, salaryDeduction, earnedIncome, standardBasicDeduction, workStudentDeduction,
             taxableIncome, incomeTax, employeeInsurance, nationalHealth, nationalPension,
             insuranceTotal, net: gross - incomeTax - insuranceTotal,
-            healthDependentLost, dependentHealthLimit
+            healthDependentLost, dependentHealthLimit, pensionMonths
         };
     }
 
@@ -171,7 +187,7 @@ function calculateV2() {
         `<p>勤労学生控除：${yen(personal.workStudentDeduction)}${personal.workStudentDeduction ? '（要件に該当する選択時）' : ''}</p>`,
         isCompanyInsured
             ? `<p>勤務先の健康保険・厚生年金（概算）：${yen(personal.employeeInsurance)}<br><small>加入済み／加入確定の前提で、年収の約15%・通年加入として試算。</small></p>`
-            : `<p>国民健康保険（概算）：${yen(personal.nationalHealth)}<br>国民年金の当年支払見込み：${yen(personal.nationalPension)}${isStudentExemption && isOver20 ? '（学生納付特例が承認される前提。免除ではなく猶予）' : ''}</p>`,
+            : `<p>国民健康保険（概算）：${yen(personal.nationalHealth)}<br>国民年金（${personal.pensionMonths}か月分）の当年支払見込み：${yen(personal.nationalPension)}${isStudentExemption && ageAtYearEnd >= 20 && ageAtYearEnd < 60 ? '（学生納付特例が承認される前提。免除ではなく猶予）' : ''}</p>`,
         `<p><strong>本人の手取り参考額：${yen(personal.net)}</strong></p>`
     ].join('');
 

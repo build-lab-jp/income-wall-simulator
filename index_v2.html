@@ -25,6 +25,20 @@
         .section-title { margin-top: 18px; padding-bottom: 5px; border-bottom: 2px solid #0874d1; font-size: 1.08rem; font-weight: 700; }
         .result-box { background: white; border-radius: 6px; padding: 12px; margin-top: 10px; }
         .notice { color: #555; font-size: .88rem; }
+        :focus-visible { outline: 3px solid #f2a900; outline-offset: 2px; }
+        @media (max-width: 600px) {
+            body { margin: 0 auto; padding: 12px; line-height: 1.65; }
+            .card { padding: 18px 16px; border-radius: 8px; }
+            h2 { font-size: 1.35rem; line-height: 1.4; }
+            input[type="number"], select { min-height: 48px; font-size: 16px; }
+            .checkbox-group label { display: flex; align-items: flex-start; gap: 10px; min-height: 44px; margin: 0; padding: 8px 0; }
+            .checkbox-group input { width: 20px; height: 20px; flex: 0 0 20px; margin: 2px 0 0; }
+            .criteria-help { margin-left: 30px; }
+            .criteria-help summary { min-height: 44px; padding: 8px 0; }
+            button { min-height: 50px; }
+            #resultV2 { padding: 14px; }
+            .result-box { padding: 12px; overflow-wrap: anywhere; }
+        }
     </style>
 </head>
 <body>
@@ -43,14 +57,15 @@
         <small class="hint">これまでの月平均が年末まで続くものとして予測します。</small>
     </div>
     <div class="input-group">
-        <label for="ageGroup">本人の年齢区分（その年の12月31日時点）</label>
-        <select id="ageGroup">
-            <option value="19_22">19〜22歳</option>
-            <option value="16_18">16〜18歳</option>
-            <option value="23_69">23〜69歳</option>
-            <option value="under16">15歳以下</option>
-            <option value="70plus">70歳以上</option>
-        </select>
+        <label for="ageAtYearEnd">本人の年齢（その年の12月31日時点）</label>
+        <input type="number" id="ageAtYearEnd" min="0" max="120" step="1" inputmode="numeric" placeholder="例：20">
+        <small class="hint">扶養控除の判定に使います。誕生日前でも、その年の12月31日時点の年齢を入力してください。</small>
+    </div>
+    <div class="input-group" id="birthMonthGroup" hidden>
+        <label for="birthMonth">誕生月（年末時点で20歳の方）</label>
+        <select id="birthMonth"><option value="">選択してください</option></select>
+        <div class="checkbox-group"><label><input type="checkbox" id="birthdayIsFirst">誕生日が1日</label></div>
+        <small class="hint">国民年金の対象月数を見積もるために使います。生年月日全体は入力不要です。</small>
     </div>
     <div class="input-group">
         <label for="taxYear">試算する年分</label>
@@ -93,9 +108,9 @@
             <p>勤務先から加入資格の通知を受けている、または加入日が確定している場合にチェックします。勤務時間・雇用見込み・勤務先の条件などで加入対象が決まるため、分からない場合は勤務先に確認してください。親の健康保険の扶養とは別の判定です。</p>
             <p><a href="https://www.nenkin.go.jp/service/kounen/tekiyo/jigyosho/20150518.html" target="_blank" rel="noopener noreferrer">日本年金機構：従業員を採用したときの手続き</a></p>
         </details>
-        <div class="checkbox-group"><label><input type="checkbox" id="isOver20">20歳以上（19〜22歳を選んだ場合）</label></div>
-        <details class="criteria-help"><summary>判断の目安（国民年金）</summary>
-            <p>日本国内に住む人は、原則20歳から国民年金の対象です。19〜22歳の区分で、その年に20歳になる場合も対象月が生じます。この試算はチェックすると国民年金を12か月分として計算するため、年の途中で20歳になる方は実際の納付月数と異なることがあります。</p>
+        <details class="criteria-help"><summary>国民年金の月数計算について</summary>
+            <p>日本国内に住む人は原則20歳から60歳になるまで国民年金の対象です。20歳になる月から対象月数を数えます。誕生日が1日の場合、法律上は前月末日に20歳に達するため、対象開始月も前月になります。</p>
+            <p>年末時点で20歳の方に限り、誕生月と「誕生日が1日」かどうかを入力してください。対象月数を見積もります。勤務先の厚生年金加入月や海外居住等は別途考慮していません。</p>
             <p><a href="https://www.nenkin.go.jp/service/scenebetsu/hatachi.html" target="_blank" rel="noopener noreferrer">日本年金機構：20歳になったときの国民年金の手続き</a></p>
         </details>
         <div class="checkbox-group"><label><input type="checkbox" id="isStudentExemption">学生納付特例が承認済み、または承認される前提で試算する</label></div>
@@ -143,5 +158,18 @@
     </div>
 </div>
 <script src="script_v2.js"></script>
+<script>
+const ageInput = document.getElementById('ageAtYearEnd');
+const birthGroup = document.getElementById('birthMonthGroup');
+const birthMonth = document.getElementById('birthMonth');
+for (let month = 1; month <= 12; month++) birthMonth.add(new Option(`${month}月`, month));
+function updateBirthMonthVisibility() {
+    const needsBirthMonth = ageInput.value === '20';
+    birthGroup.hidden = !needsBirthMonth;
+    birthMonth.required = needsBirthMonth;
+}
+ageInput.addEventListener('input', updateBirthMonthVisibility);
+updateBirthMonthVisibility();
+</script>
 </body>
 </html>

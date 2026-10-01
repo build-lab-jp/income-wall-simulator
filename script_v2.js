@@ -24,6 +24,13 @@ ageInput.addEventListener('input', updateBirthMonthVisibility);
 calculatorForm.addEventListener('input', () => showInputError(''));
 calculatorForm.addEventListener('change', () => showInputError(''));
 calculatorForm.addEventListener('submit', calculateV2);
+calculatorForm.addEventListener('reset', () => {
+    window.setTimeout(() => {
+        showInputError('');
+        updateBirthMonthVisibility();
+        document.getElementById('resultV2').style.display = 'none';
+    }, 0);
+});
 updateBirthMonthVisibility();
 
 function calculateV2(event) {

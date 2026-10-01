@@ -52,14 +52,14 @@
     <form id="calculatorForm" novalidate>
     <div id="inputError" class="notice" role="alert" tabindex="-1" hidden></div>
     <div class="input-group">
-        <label for="currentIncome">今年これまでに受け取った給与の合計（円）</label>
+        <label for="currentIncome">選択した年に受け取った給与の合計（円）</label>
         <input type="number" id="currentIncome" min="0" step="1" required aria-describedby="inputError" inputmode="numeric" placeholder="例：900000">
-        <small class="hint">複数のアルバイト先がある場合は合計してください。賞与なども含めます。</small>
+        <small class="hint" id="incomeGuidance">複数のアルバイト先がある場合は合計してください。賞与なども含めます。</small>
     </div>
     <div class="input-group">
-        <label for="elapsedMonths">給与を受け取った月数</label>
+        <label for="elapsedMonths">給与を受け取った月数（選択年）</label>
         <input type="number" id="elapsedMonths" min="1" max="12" step="1" required aria-describedby="inputError" inputmode="numeric" placeholder="例：8">
-        <small class="hint">これまでの月平均が年末まで続くものとして予測します。</small>
+        <small class="hint" id="monthsGuidance">入力額の月平均が年末まで続くものとして予測します。</small>
     </div>
     <div class="input-group">
         <label for="ageAtYearEnd">本人の年齢（その年の12月31日時点）</label>

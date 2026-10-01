@@ -3,6 +3,9 @@ const inputError = document.getElementById('inputError');
 const ageInput = document.getElementById('ageAtYearEnd');
 const birthGroup = document.getElementById('birthMonthGroup');
 const birthMonthSelect = document.getElementById('birthMonth');
+const taxYearSelect = document.getElementById('taxYear');
+const incomeGuidance = document.getElementById('incomeGuidance');
+const monthsGuidance = document.getElementById('monthsGuidance');
 
 for (let month = 1; month <= 12; month++) {
     birthMonthSelect.add(new Option(`${month}月`, month));
@@ -14,6 +17,21 @@ function updateBirthMonthVisibility() {
     birthMonthSelect.required = needsBirthMonth;
 }
 
+function updateIncomeGuidance() {
+    const selectedYear = Number(taxYearSelect.value);
+    const currentYear = new Date().getFullYear();
+    if (selectedYear === currentYear) {
+        incomeGuidance.textContent = `${selectedYear}年1月から現在までに受け取った給与を入力してください。複数の勤務先や賞与も合計します。`;
+        monthsGuidance.textContent = `これまでに給与を受け取った月数を入力してください。入力額の月平均が年末まで続く想定で予測します。`;
+    } else if (selectedYear < currentYear) {
+        incomeGuidance.textContent = `${selectedYear}年分の試算です。複数の勤務先や賞与を含め、その年に受け取った給与を入力してください。`;
+        monthsGuidance.textContent = `年間の実績を入力する場合は12か月にしてください。年途中までの累計から予測する場合は、その時点までの月数を入力します。`;
+    } else {
+        incomeGuidance.textContent = `${selectedYear}年分の試算です。予測したい給与額を入力してください。複数の勤務先や賞与も合計します。`;
+        monthsGuidance.textContent = `予測額の月平均が12か月続くものとして年収を計算します。`;
+    }
+}
+
 function showInputError(message, focusTargetId) {
     inputError.textContent = message;
     inputError.hidden = !message;
@@ -21,6 +39,7 @@ function showInputError(message, focusTargetId) {
 }
 
 ageInput.addEventListener('input', updateBirthMonthVisibility);
+taxYearSelect.addEventListener('change', updateIncomeGuidance);
 calculatorForm.addEventListener('input', () => showInputError(''));
 calculatorForm.addEventListener('change', () => showInputError(''));
 calculatorForm.addEventListener('submit', calculateV2);
@@ -28,10 +47,12 @@ calculatorForm.addEventListener('reset', () => {
     window.setTimeout(() => {
         showInputError('');
         updateBirthMonthVisibility();
+        updateIncomeGuidance();
         document.getElementById('resultV2').style.display = 'none';
     }, 0);
 });
 updateBirthMonthVisibility();
+updateIncomeGuidance();
 
 function calculateV2(event) {
     event.preventDefault();

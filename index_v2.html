@@ -62,7 +62,7 @@
         <small class="hint">扶養控除の判定に使います。誕生日前でも、その年の12月31日時点の年齢を入力してください。</small>
     </div>
     <div class="input-group" id="birthMonthGroup" hidden>
-        <label for="birthMonth">誕生月（年末時点で20歳の方）</label>
+        <label for="birthMonth">誕生月（年末時点で20歳または60歳の方）</label>
         <select id="birthMonth"><option value="">選択してください</option></select>
         <div class="checkbox-group"><label><input type="checkbox" id="birthdayIsFirst">誕生日が1日</label></div>
         <small class="hint">国民年金の対象月数を見積もるために使います。生年月日全体は入力不要です。</small>
@@ -110,7 +110,7 @@
         </details>
         <details class="criteria-help"><summary>国民年金の月数計算について</summary>
             <p>日本国内に住む人は原則20歳から60歳になるまで国民年金の対象です。20歳になる月から対象月数を数えます。誕生日が1日の場合、法律上は前月末日に20歳に達するため、対象開始月も前月になります。</p>
-            <p>年末時点で20歳の方に限り、誕生月と「誕生日が1日」かどうかを入力してください。対象月数を見積もります。勤務先の厚生年金加入月や海外居住等は別途考慮していません。</p>
+            <p>年末時点で20歳または60歳の方に限り、誕生月と「誕生日が1日」かどうかを入力してください。20歳到達時は対象開始月、60歳到達時は対象終了月を見積もります。勤務先の厚生年金加入月や海外居住等は別途考慮していません。</p>
             <p><a href="https://www.nenkin.go.jp/service/scenebetsu/hatachi.html" target="_blank" rel="noopener noreferrer">日本年金機構：20歳になったときの国民年金の手続き</a></p>
         </details>
         <div class="checkbox-group"><label><input type="checkbox" id="isStudentExemption">学生納付特例が承認済み、または承認される前提で試算する</label></div>
@@ -164,7 +164,7 @@ const birthGroup = document.getElementById('birthMonthGroup');
 const birthMonth = document.getElementById('birthMonth');
 for (let month = 1; month <= 12; month++) birthMonth.add(new Option(`${month}月`, month));
 function updateBirthMonthVisibility() {
-    const needsBirthMonth = ageInput.value === '20';
+    const needsBirthMonth = ageInput.value === '20' || ageInput.value === '60';
     birthGroup.hidden = !needsBirthMonth;
     birthMonth.required = needsBirthMonth;
 }

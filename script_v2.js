@@ -20,12 +20,12 @@ function calculateV2() {
         alert('給与の合計・経過月数・年末時点の年齢を正しく入力してください。');
         return;
     }
-    if (ageAtYearEnd === 20 && (!Number.isInteger(birthMonth) || birthMonth < 1 || birthMonth > 12)) {
-        alert('年末時点で20歳の方は誕生月を選択してください。');
+    if ((ageAtYearEnd === 20 || ageAtYearEnd === 60) && (!Number.isInteger(birthMonth) || birthMonth < 1 || birthMonth > 12)) {
+        alert('年末時点で20歳または60歳の方は誕生月を選択してください。');
         return;
     }
-    if (ageAtYearEnd < 20 && isStudentExemption) {
-        alert('学生納付特例は20歳以上の方が対象です。チェックを外してください。')
+    if ((ageAtYearEnd < 20 || ageAtYearEnd >= 60) && isStudentExemption) {
+        alert('学生納付特例は20歳以上60歳未満の方が対象です。チェックを外してください。')
         return;
     }
 
@@ -106,16 +106,20 @@ function calculateV2() {
                 // 国保料は自治体・前年所得等で異なるため、所得割の単純な参考値。
                 nationalHealth = Math.max(30000, Math.round(Math.max(0, earnedIncome - 430000) * 0.08));
             }
-            const pensionStartMonth = ageAtYearEnd < 20 || ageAtYearEnd >= 60
-                ? null
-                : ageAtYearEnd === 20
-                    ? (birthdayIsFirst ? birthMonth - 1 : birthMonth)
-                    : 1;
-            if (pensionStartMonth !== null) {
+            let firstMonthInYear = 1;
+            let lastMonthInYear = 12;
+            if (ageAtYearEnd < 20 || ageAtYearEnd > 60) {
+                lastMonthInYear = 0;
+            } else if (ageAtYearEnd === 20) {
+                firstMonthInYear = Math.max(1, birthdayIsFirst ? birthMonth - 1 : birthMonth);
+            } else if (ageAtYearEnd === 60) {
+                // 60歳到達日（誕生日の前日）が属する月の前月分までが納付対象。
+                lastMonthInYear = birthdayIsFirst ? birthMonth - 2 : birthMonth - 1;
+            }
+            pensionMonths = Math.max(0, lastMonthInYear - firstMonthInYear + 1);
+            if (pensionMonths > 0) {
                 const monthlyRate = month => taxYear === '2025' ? (month <= 3 ? 16980 : 17510) : (month <= 3 ? 17510 : 17920);
-                const firstMonthInYear = Math.max(1, pensionStartMonth);
-                pensionMonths = 13 - firstMonthInYear;
-                const pensionForYear = Array.from({length: 13 - firstMonthInYear}, (_, i) => monthlyRate(firstMonthInYear + i)).reduce((sum, rate) => sum + rate, 0);
+                const pensionForYear = Array.from({length: pensionMonths}, (_, i) => monthlyRate(firstMonthInYear + i)).reduce((sum, rate) => sum + rate, 0);
                 nationalPension = isStudentExemption ? 0 : pensionForYear;
             }
         }

@@ -1,0 +1,7 @@
+{
+  "name": "income-wall-simulator",
+  "private": true,
+  "scripts": {
+    "test": "node --test"
+  }
+}

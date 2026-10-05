@@ -48,8 +48,19 @@
 
 参照先確認日：2026年10月5日
 
+## 自動テスト
+
+Node.js 18以降を用意し、プロジェクトフォルダーで次を実行します。追加パッケージのインストールは不要です。
+
+```powershell
+npm test
+```
+
 ## ファイル構成
 
 - `index_v2.html` — 画面、入力項目、スタイル
-- `script_v2.js` — 年収、税・保険料、世帯手取りの試算処理
+- `script_v2.js` — 入力の検証と画面表示
+- `calculations.js` — 画面から独立した年収・保険料計算
+- `tests/calculations.test.js` — 計算ロジックの自動テスト
+- `package.json` — テスト実行コマンド
 - `CHANGELOG.md` — 更新内容とフィードバックの記録

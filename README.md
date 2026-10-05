@@ -43,8 +43,10 @@
 - [厚生労働省：「年収の壁」への対応](https://www.mhlw.go.jp/stf/taiou_001_00002.html)
 - [日本年金機構：学生納付特例制度](https://www.nenkin.go.jp/service/kokunen/menjo/20150514.html)
 - [日本年金機構：60歳到達時の納付対象月](https://www.nenkin.go.jp/service/kokunen/hokenryo/nofusho.html)
+- [日本年金機構：2026年10月の社会保険の賃金要件撤廃](https://www.nenkin.go.jp/oshirase/taisetu/jigyosho/2026/202610/100104.html)
+- [日本年金機構：短時間労働者の学生要件](https://www.nenkin.go.jp/section/faq/kounen/tekiyoukakudai/tanjikan/gakusei02.html)
 
-参照先確認日：2026年9月30日
+参照先確認日：2026年10月5日
 
 ## ファイル構成
 

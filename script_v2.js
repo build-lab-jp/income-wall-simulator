@@ -131,62 +131,8 @@ function calculateV2(event) {
     const baselineIncome = 1000000;
     const yen = value => `${Math.round(value).toLocaleString('ja-JP')}円`;
 
-    // 給与所得控除。2025・2026年分の最低保障と速算式を使う。
-    function employmentDeduction(gross) {
-        if (taxYear === '2025') {
-            if (gross <= 1900000) return Math.min(gross, 650000);
-            if (gross <= 3600000) return gross * 0.30 + 80000;
-            if (gross <= 6600000) return gross * 0.20 + 440000;
-            if (gross <= 8500000) return gross * 0.10 + 1100000;
-            return 1950000;
-        }
-        if (gross <= 2200000) return Math.min(gross, 740000);
-        if (gross <= 3600000) return gross * 0.30 + 80000;
-        if (gross <= 6600000) return gross * 0.20 + 440000;
-        if (gross <= 8500000) return gross * 0.10 + 1100000;
-        return 1950000;
-    }
-
-    function basicDeduction(earnedIncome) {
-        if (taxYear === '2025') {
-            if (earnedIncome <= 1320000) return 950000;
-            if (earnedIncome <= 3360000) return 880000;
-            if (earnedIncome <= 4890000) return 680000;
-            if (earnedIncome <= 6550000) return 630000;
-            if (earnedIncome <= 23500000) return 580000;
-            if (earnedIncome <= 24000000) return 480000;
-            if (earnedIncome <= 24500000) return 320000;
-            if (earnedIncome <= 25000000) return 160000;
-            return 0;
-        }
-        if (earnedIncome <= 4890000) return 1040000;
-        if (earnedIncome <= 6550000) return 670000;
-        if (earnedIncome <= 23500000) return 620000;
-        if (earnedIncome <= 24000000) return 480000;
-        if (earnedIncome <= 24500000) return 320000;
-        if (earnedIncome <= 25000000) return 160000;
-        return 0;
-    }
-
-    function incomeTaxFromTaxable(taxable) {
-        const roundedTaxable = Math.floor(Math.max(0, taxable) / 1000) * 1000;
-        let tax;
-        if (roundedTaxable <= 1950000) tax = roundedTaxable * 0.05;
-        else if (roundedTaxable <= 3300000) tax = roundedTaxable * 0.10 - 97500;
-        else if (roundedTaxable <= 6950000) tax = roundedTaxable * 0.20 - 427500;
-        else if (roundedTaxable <= 9000000) tax = roundedTaxable * 0.23 - 636000;
-        else if (roundedTaxable <= 18000000) tax = roundedTaxable * 0.33 - 1536000;
-        else if (roundedTaxable <= 40000000) tax = roundedTaxable * 0.40 - 2796000;
-        else tax = roundedTaxable * 0.45 - 4796000;
-        return Math.round(Math.max(0, tax) * 1.021); // 復興特別所得税を含む
-    }
-
     function calculatePersonal(gross) {
-        const salaryDeduction = employmentDeduction(gross);
-        const earnedIncome = Math.max(0, gross - salaryDeduction);
-        const standardBasicDeduction = basicDeduction(earnedIncome);
-        const workStudentLimit = taxYear === '2025' ? 850000 : 890000;
-        const workStudentDeduction = isWorkStudent && earnedIncome <= workStudentLimit ? 270000 : 0;
+        const { salaryDeduction, earnedIncome } = IncomeWallCalculations.calculateEarnedIncome(gross, taxYear);
 
         const insurance = IncomeWallCalculations.calculateInsurance({
             gross,
@@ -211,8 +157,10 @@ function calculateV2(event) {
 
         // 実際に支払う社会保険料は、本人の所得税計算上の社会保険料控除として差し引く。
         const insuranceTotal = employeeInsurance + nationalHealth + nationalPension;
-        const taxableIncome = Math.max(0, earnedIncome - standardBasicDeduction - workStudentDeduction - insuranceTotal);
-        const incomeTax = incomeTaxFromTaxable(taxableIncome);
+        const personalTax = IncomeWallCalculations.calculatePersonalTax({
+            earnedIncome, taxYear, isWorkStudent, insuranceTotal
+        });
+        const { standardBasicDeduction, workStudentDeduction, taxableIncome, incomeTax } = personalTax;
         return {
             gross, salaryDeduction, earnedIncome, standardBasicDeduction, workStudentDeduction,
             taxableIncome, incomeTax, employeeInsurance, nationalHealth, nationalPension,
@@ -221,48 +169,12 @@ function calculateV2(event) {
         };
     }
 
-    // 親の所得税上の控除額。19〜22歳は特定扶養・特定親族特別控除の年分別表。
-    function parentDeduction(gross) {
-        if (!isTaxDependent || ageGroup === 'under16') return 0;
-
-        const dependentIncomeLimit = taxYear === '2025' ? 1230000 : 1360000;
-        if (ageGroup === '19_22') {
-            if (taxYear === '2025') {
-                if (gross <= 1500000) return 630000;
-                if (gross <= 1550000) return 610000;
-                if (gross <= 1600000) return 510000;
-                if (gross <= 1650000) return 410000;
-                if (gross <= 1700000) return 310000;
-                if (gross <= 1750000) return 210000;
-                if (gross <= 1800000) return 110000;
-                if (gross <= 1850000) return 60000;
-                if (gross <= 1880000) return 30000;
-                return 0;
-            }
-            if (gross <= 1590000) return 630000;
-            if (gross <= 1640000) return 610000;
-            if (gross <= 1690000) return 510000;
-            if (gross <= 1740000) return 410000;
-            if (gross <= 1790000) return 310000;
-            if (gross <= 1840000) return 210000;
-            if (gross <= 1890000) return 110000;
-            if (gross <= 1940000) return 60000;
-            if (gross <= 1970000) return 30000;
-            return 0;
-        }
-        // 16〜18歳・23〜69歳は一般扶養控除。70歳以上は同居老親等の判定が
-        // 必要なため、ここでは老人扶養親族（同居老親等以外）の額を使う。
-        if (gross > dependentIncomeLimit) return 0;
-        if (ageGroup === '70plus') return 480000;
-        return 380000;
-    }
-
     const personal = calculatePersonal(projectedIncome);
     const baseline = calculatePersonal(baselineIncome);
-    const parentDeductionAtBaseline = parentDeduction(baselineIncome);
-    const parentDeductionCurrent = parentDeduction(projectedIncome);
+    const parentDeductionAtBaseline = IncomeWallCalculations.calculateParentDeduction(baselineIncome, { isTaxDependent, ageGroup, taxYear });
+    const parentDeductionCurrent = IncomeWallCalculations.calculateParentDeduction(projectedIncome, { isTaxDependent, ageGroup, taxYear });
     const parentDeductionLoss = Math.max(0, parentDeductionAtBaseline - parentDeductionCurrent);
-    const parentIncomeTaxIncrease = Math.round(parentDeductionLoss * parentTaxRate * 1.021);
+    const parentIncomeTaxIncrease = IncomeWallCalculations.estimateParentIncomeTaxIncrease(parentDeductionLoss, parentTaxRate);
     const householdNetAtBaseline = baseline.net;
     const householdNetCurrent = personal.net - parentIncomeTaxIncrease;
     const incomeIncrease = projectedIncome - baselineIncome;

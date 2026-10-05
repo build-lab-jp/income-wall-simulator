@@ -98,7 +98,6 @@ function calculateV2(event) {
     const companyInsuranceMonths = isCompanyInsured
         ? Array.from(companyInsuranceMonthChecks.querySelectorAll('input:checked'), input => Number(input.value))
         : [];
-    const companyInsuranceMonthSet = new Set(companyInsuranceMonths);
     const isStudentExemption = document.getElementById('isStudentExemption').checked;
     const isWorkStudent = document.getElementById('isWorkStudent').checked;
 
@@ -127,7 +126,7 @@ function calculateV2(event) {
         return;
     }
 
-    const projectedIncome = Math.round(incomeToDate / monthsElapsed * 12);
+    const projectedIncome = IncomeWallCalculations.projectAnnualIncome(incomeToDate, monthsElapsed);
     const averageMonthly = Math.round(incomeToDate / monthsElapsed);
     const baselineIncome = 1000000;
     const yen = value => `${Math.round(value).toLocaleString('ja-JP')}円`;
@@ -189,41 +188,26 @@ function calculateV2(event) {
         const workStudentLimit = taxYear === '2025' ? 850000 : 890000;
         const workStudentDeduction = isWorkStudent && earnedIncome <= workStudentLimit ? 270000 : 0;
 
-        let employeeInsurance = 0;
-        let nationalHealth = 0;
-        let nationalPension = 0;
-        let pensionMonths = 0;
-        const dependentHealthLimit = ageGroup === '19_22' ? 1500000 : 1300000;
-        const healthDependentLost = isHealthDependent && gross >= dependentHealthLimit;
-
-        const uncoveredHealthMonths = 12 - companyInsuranceMonths.length;
-        employeeInsurance = Math.round((gross / 12) * 0.15 * companyInsuranceMonths.length);
-        if ((!isHealthDependent || healthDependentLost) && uncoveredHealthMonths > 0) {
-            // 国保料の簡易年額を、勤務先保険の未加入月数に応じて按分。
-            const annualNationalHealth = Math.max(30000, Math.round(Math.max(0, earnedIncome - 430000) * 0.08));
-            nationalHealth = Math.round(annualNationalHealth * uncoveredHealthMonths / 12);
-        }
-
-        let firstPensionMonth = 1;
-        let lastPensionMonth = 12;
-        if (ageAtYearEnd < 20 || ageAtYearEnd > 60) {
-            lastPensionMonth = 0;
-        } else if (ageAtYearEnd === 20) {
-            firstPensionMonth = Math.max(1, birthdayIsFirst ? birthMonth - 1 : birthMonth);
-        } else if (ageAtYearEnd === 60) {
-            // 60歳到達日（誕生日の前日）が属する月の前月分までが納付対象。
-            lastPensionMonth = birthdayIsFirst ? birthMonth - 2 : birthMonth - 1;
-        }
-        const pensionEligibleMonths = Array.from(
-            {length: Math.max(0, lastPensionMonth - firstPensionMonth + 1)},
-            (_, index) => firstPensionMonth + index
-        );
-        const uncoveredPensionMonths = pensionEligibleMonths.filter(month => !companyInsuranceMonthSet.has(month));
-        pensionMonths = uncoveredPensionMonths.length;
-        if (!isStudentExemption) {
-            const monthlyRate = month => taxYear === '2025' ? (month <= 3 ? 16980 : 17510) : (month <= 3 ? 17510 : 17920);
-            nationalPension = uncoveredPensionMonths.reduce((sum, month) => sum + monthlyRate(month), 0);
-        }
+        const insurance = IncomeWallCalculations.calculateInsurance({
+            gross,
+            earnedIncome,
+            ageAtYearEnd,
+            ageGroup,
+            birthMonth,
+            birthdayIsFirst,
+            taxYear,
+            isHealthDependent,
+            companyInsuranceMonths,
+            isStudentExemption
+        });
+        const {
+            employeeInsurance,
+            nationalHealth,
+            nationalPension,
+            pensionMonths,
+            healthDependentLost,
+            dependentHealthLimit
+        } = insurance;
 
         // 実際に支払う社会保険料は、本人の所得税計算上の社会保険料控除として差し引く。
         const insuranceTotal = employeeInsurance + nationalHealth + nationalPension;

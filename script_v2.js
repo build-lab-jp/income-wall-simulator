@@ -8,10 +8,21 @@ const incomeGuidance = document.getElementById('incomeGuidance');
 const monthsGuidance = document.getElementById('monthsGuidance');
 const companyInsuranceCheckbox = document.getElementById('isCompanyInsured');
 const companyInsuranceMonthsGroup = document.getElementById('companyInsuranceMonthsGroup');
-const companyInsuranceMonthsInput = document.getElementById('companyInsuranceMonths');
+const companyInsuranceMonthChecks = document.getElementById('companyInsuranceMonthChecks');
 
 for (let month = 1; month <= 12; month++) {
     birthMonthSelect.add(new Option(`${month}月`, month));
+
+    const monthLabel = document.createElement('label');
+    const monthCheckbox = document.createElement('input');
+    monthCheckbox.type = 'checkbox';
+    monthCheckbox.name = 'companyInsuranceMonth';
+    monthCheckbox.value = month;
+    monthCheckbox.checked = true;
+    monthCheckbox.defaultChecked = true;
+    monthCheckbox.setAttribute('aria-describedby', 'companyInsuranceMonthsHint');
+    monthLabel.append(monthCheckbox, document.createTextNode(`${month}月`));
+    companyInsuranceMonthChecks.append(monthLabel);
 }
 
 function updateBirthMonthVisibility() {
@@ -23,7 +34,7 @@ function updateBirthMonthVisibility() {
 function updateCompanyInsuranceVisibility() {
     const isInsured = companyInsuranceCheckbox.checked;
     companyInsuranceMonthsGroup.hidden = !isInsured;
-    companyInsuranceMonthsInput.required = isInsured;
+
 }
 
 function updateIncomeGuidance() {
@@ -41,10 +52,11 @@ function updateIncomeGuidance() {
     }
 }
 
-function showInputError(message, focusTargetId) {
+function showInputError(message, focusTarget) {
     inputError.textContent = message;
     inputError.hidden = !message;
-    if (focusTargetId) document.getElementById(focusTargetId).focus();
+    if (typeof focusTarget === 'string') document.getElementById(focusTarget).focus();
+    else if (focusTarget) focusTarget.focus();
 }
 
 ageInput.addEventListener('input', updateBirthMonthVisibility);
@@ -83,8 +95,10 @@ function calculateV2(event) {
     const isTaxDependent = document.getElementById('isTaxDependent').checked;
     const isHealthDependent = document.getElementById('isHealthDependent').checked;
     const isCompanyInsured = companyInsuranceCheckbox.checked;
-    const companyInsuranceMonthsText = companyInsuranceMonthsInput.value.trim();
-    const companyInsuranceMonths = Number(companyInsuranceMonthsText);
+    const companyInsuranceMonths = isCompanyInsured
+        ? Array.from(companyInsuranceMonthChecks.querySelectorAll('input:checked'), input => Number(input.value))
+        : [];
+    const companyInsuranceMonthSet = new Set(companyInsuranceMonths);
     const isStudentExemption = document.getElementById('isStudentExemption').checked;
     const isWorkStudent = document.getElementById('isWorkStudent').checked;
 
@@ -108,8 +122,8 @@ function calculateV2(event) {
         showInputError('学生納付特例は20歳以上60歳未満の方が対象です。年齢とチェックを確認してください。', 'isStudentExemption');
         return;
     }
-    if (isCompanyInsured && (!companyInsuranceMonthsText || !Number.isInteger(companyInsuranceMonths) || companyInsuranceMonths < 1 || companyInsuranceMonths > 12)) {
-        showInputError('勤務先の社会保険加入月数を1〜12の整数で入力してください。', 'companyInsuranceMonths');
+    if (isCompanyInsured && companyInsuranceMonths.length === 0) {
+        showInputError('勤務先の社会保険に加入していた月を1か月以上選択してください。', companyInsuranceMonthChecks.querySelector('input'));
         return;
     }
 
@@ -182,30 +196,33 @@ function calculateV2(event) {
         const dependentHealthLimit = ageGroup === '19_22' ? 1500000 : 1300000;
         const healthDependentLost = isHealthDependent && gross >= dependentHealthLimit;
 
-        if (isCompanyInsured) {
-            // 実際に勤務先の健保・厚生年金へ加入している前提の概算。
-            employeeInsurance = Math.round((gross / 12) * 0.15 * companyInsuranceMonths);
-        } else {
-            if (!isHealthDependent || healthDependentLost) {
-                // 国保料は自治体・前年所得等で異なるため、所得割の単純な参考値。
-                nationalHealth = Math.max(30000, Math.round(Math.max(0, earnedIncome - 430000) * 0.08));
-            }
-            let firstMonthInYear = 1;
-            let lastMonthInYear = 12;
-            if (ageAtYearEnd < 20 || ageAtYearEnd > 60) {
-                lastMonthInYear = 0;
-            } else if (ageAtYearEnd === 20) {
-                firstMonthInYear = Math.max(1, birthdayIsFirst ? birthMonth - 1 : birthMonth);
-            } else if (ageAtYearEnd === 60) {
-                // 60歳到達日（誕生日の前日）が属する月の前月分までが納付対象。
-                lastMonthInYear = birthdayIsFirst ? birthMonth - 2 : birthMonth - 1;
-            }
-            pensionMonths = Math.max(0, lastMonthInYear - firstMonthInYear + 1);
-            if (pensionMonths > 0) {
-                const monthlyRate = month => taxYear === '2025' ? (month <= 3 ? 16980 : 17510) : (month <= 3 ? 17510 : 17920);
-                const pensionForYear = Array.from({length: pensionMonths}, (_, i) => monthlyRate(firstMonthInYear + i)).reduce((sum, rate) => sum + rate, 0);
-                nationalPension = isStudentExemption ? 0 : pensionForYear;
-            }
+        const uncoveredHealthMonths = 12 - companyInsuranceMonths.length;
+        employeeInsurance = Math.round((gross / 12) * 0.15 * companyInsuranceMonths.length);
+        if ((!isHealthDependent || healthDependentLost) && uncoveredHealthMonths > 0) {
+            // 国保料の簡易年額を、勤務先保険の未加入月数に応じて按分。
+            const annualNationalHealth = Math.max(30000, Math.round(Math.max(0, earnedIncome - 430000) * 0.08));
+            nationalHealth = Math.round(annualNationalHealth * uncoveredHealthMonths / 12);
+        }
+
+        let firstPensionMonth = 1;
+        let lastPensionMonth = 12;
+        if (ageAtYearEnd < 20 || ageAtYearEnd > 60) {
+            lastPensionMonth = 0;
+        } else if (ageAtYearEnd === 20) {
+            firstPensionMonth = Math.max(1, birthdayIsFirst ? birthMonth - 1 : birthMonth);
+        } else if (ageAtYearEnd === 60) {
+            // 60歳到達日（誕生日の前日）が属する月の前月分までが納付対象。
+            lastPensionMonth = birthdayIsFirst ? birthMonth - 2 : birthMonth - 1;
+        }
+        const pensionEligibleMonths = Array.from(
+            {length: Math.max(0, lastPensionMonth - firstPensionMonth + 1)},
+            (_, index) => firstPensionMonth + index
+        );
+        const uncoveredPensionMonths = pensionEligibleMonths.filter(month => !companyInsuranceMonthSet.has(month));
+        pensionMonths = uncoveredPensionMonths.length;
+        if (!isStudentExemption) {
+            const monthlyRate = month => taxYear === '2025' ? (month <= 3 ? 16980 : 17510) : (month <= 3 ? 17510 : 17920);
+            nationalPension = uncoveredPensionMonths.reduce((sum, month) => sum + monthlyRate(month), 0);
         }
 
         // 実際に支払う社会保険料は、本人の所得税計算上の社会保険料控除として差し引く。
@@ -274,8 +291,9 @@ function calculateV2(event) {
         `<p>給与所得控除：${yen(personal.salaryDeduction)} ／ 給与所得：${yen(personal.earnedIncome)}</p>`,
         `<p>勤労学生控除：${yen(personal.workStudentDeduction)}${personal.workStudentDeduction ? '（要件に該当する選択時）' : ''}</p>`,
         isCompanyInsured
-            ? `<p>勤務先の健康保険・厚生年金（概算、加入${companyInsuranceMonths}か月）：${yen(personal.employeeInsurance)}<br><small>年収を12等分した月収の約15%を加入月数分計上。実額は標準報酬月額・保険料率などで異なります。</small></p>`
-            : `<p>国民健康保険（概算）：${yen(personal.nationalHealth)}<br>国民年金（${personal.pensionMonths}か月分）の当年支払見込み：${yen(personal.nationalPension)}${isStudentExemption && ageAtYearEnd >= 20 && ageAtYearEnd < 60 ? '（学生納付特例が承認される前提。免除ではなく猶予）' : ''}</p>`,
+            ? `<p>勤務先の健康保険・厚生年金（概算、加入${companyInsuranceMonths.length}か月：${companyInsuranceMonths.map(month => `${month}月`).join('・')}）：${yen(personal.employeeInsurance)}<br><small>年収を12等分した月収の約15%を加入月分計上。実額は標準報酬月額・保険料率などで異なります。</small></p>`
+            : '',
+        `<p>国民健康保険（勤務先保険の未加入月分の概算）：${yen(personal.nationalHealth)}<br>国民年金（対象${personal.pensionMonths}か月分）：${yen(personal.nationalPension)}${isStudentExemption && ageAtYearEnd >= 20 && ageAtYearEnd < 60 ? '（学生納付特例が承認される前提。免除ではなく猶予）' : ''}</p>`,
         `<p><strong>本人の手取り参考額：${yen(personal.net)}</strong></p>`
     ].join('');
 

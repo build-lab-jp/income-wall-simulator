@@ -19,6 +19,9 @@
         .criteria-help summary { color: #0759a5; cursor: pointer; }
         .criteria-help p { margin: 6px 0; }
         .hint { display: block; color: #555; font-size: .88rem; margin-top: 5px; }
+        .month-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px 10px; margin-top: 8px; }
+        .month-grid label { display: flex; align-items: center; gap: 7px; margin: 0; font-weight: normal; cursor: pointer; }
+        .month-grid input { width: 18px; height: 18px; margin: 0; }
         .button-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         button { margin-top: 22px; width: 100%; padding: 12px; background: #0874d1; color: white; border: 0; border-radius: 6px; font-size: 1rem; font-weight: 700; cursor: pointer; }
         button:hover { background: #0759a5; }
@@ -37,6 +40,9 @@
             .checkbox-group label { display: flex; align-items: flex-start; gap: 10px; min-height: 44px; margin: 0; padding: 8px 0; }
             .checkbox-group input { width: 20px; height: 20px; flex: 0 0 20px; margin: 2px 0 0; }
             .criteria-help { margin-left: 30px; }
+            .month-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+            .month-grid label { min-height: 44px; }
+            .month-grid input { width: 20px; height: 20px; flex: 0 0 20px; }
             .criteria-help summary { min-height: 44px; padding: 8px 0; }
             button { min-height: 50px; }
             #resultV2 { padding: 14px; }
@@ -115,13 +121,13 @@
             <p><a href="https://www.nenkin.go.jp/oshirase/taisetu/jigyosho/2026/202610/100104.html" target="_blank" rel="noopener noreferrer">日本年金機構：2026年10月の賃金要件撤廃</a> ／ <a href="https://www.nenkin.go.jp/section/faq/kounen/tekiyoukakudai/tanjikan/gakusei02.html" target="_blank" rel="noopener noreferrer">日本年金機構：短時間労働者の学生要件</a></p>
         </details>
         <div class="input-group" id="companyInsuranceMonthsGroup" hidden>
-            <label for="companyInsuranceMonths">試算対象年の勤務先社会保険加入月数</label>
-            <input type="number" id="companyInsuranceMonths" min="1" max="12" step="1" value="12" inputmode="numeric" aria-describedby="companyInsuranceMonthsHint">
-            <small class="hint" id="companyInsuranceMonthsHint">年収を12等分した月収の約15%を、加入月数分で概算します。実際の月収が大きく変わる場合は目安との差が広がります。</small>
+            <label>勤務先の社会保険に加入していた月</label>
+            <div id="companyInsuranceMonthChecks" class="month-grid" role="group" aria-describedby="companyInsuranceMonthsHint"></div>
+            <small class="hint" id="companyInsuranceMonthsHint">加入していた月にチェックしてください。未加入月は、親の健康保険の扶養・国保と国民年金の条件から概算します。月ごとの給与額は年収から求めた平均額で扱います。</small>
         </div>
         <details class="criteria-help"><summary>国民年金の月数計算について</summary>
             <p>日本国内に住む人は原則20歳から60歳になるまで国民年金の対象です。20歳になる月から対象月数を数えます。誕生日が1日の場合、法律上は前月末日に20歳に達するため、対象開始月も前月になります。</p>
-            <p>年末時点で20歳または60歳の方に限り、誕生月と「誕生日が1日」かどうかを入力してください。20歳到達時は対象開始月、60歳到達時は対象終了月を見積もります。勤務先の厚生年金加入月や海外居住等は別途考慮していません。</p>
+            <p>年末時点で20歳または60歳の方に限り、誕生月と「誕生日が1日」かどうかを入力してください。20歳到達時は対象開始月、60歳到達時は対象終了月を見積もります。選択した勤務先の社会保険加入月は国民年金の対象月から除きます。海外居住等は考慮していません。</p>
             <p><a href="https://www.nenkin.go.jp/service/scenebetsu/hatachi.html" target="_blank" rel="noopener noreferrer">日本年金機構：20歳になったときの国民年金の手続き</a></p>
         </details>
         <div class="checkbox-group"><label><input type="checkbox" id="isStudentExemption">学生納付特例が承認済み、または承認される前提で試算する</label></div>
@@ -156,7 +162,7 @@
             <ul>
                 <li>入力した年初から現在までの給与を、受取月数で割って12か月分に換算し、年収を予測します。今後のシフト変更や賞与の増減は予測に反映しません。</li>
                 <li>本人の所得税・保険料と親の所得税の変化を、給与収入のみの前提で概算します。世帯手取りの比較基準は年収100万円です。</li>
-                <li>住民税、親の住民税、国民健康保険の自治体別・前年所得に基づく実額、勤務先の実際の保険料率や標準報酬月額は再現せず、年収を12等分した月収の約15%を入力された加入月数分だけ計上します。</li>
+                <li>住民税、親の住民税、国民健康保険の自治体別・前年所得に基づく実額、勤務先の実際の保険料率や標準報酬月額は再現しません。勤務先保険は年収を12等分した月収の約15%を加入月分だけ計上し、国保の簡易年額は未加入月数分に按分します。国民年金は年齢に応じた対象月のうち、勤務先の厚生年金に加入していない月分を計上します。</li>
                 <li>扶養や勤務先の社会保険の加入可否は、年収だけでは決まりません。実際の条件は勤務先や加入する健康保険に確認してください。</li>
                 <li>学生納付特例は申請・審査が必要な納付猶予です。追納する場合の将来負担はこの試算に含みません。</li>
             </ul>

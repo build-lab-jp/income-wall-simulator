@@ -40,6 +40,10 @@
 - [国税庁：扶養控除](https://www.nta.go.jp/taxes/shiraberu/taxanswer/shotoku/1180.htm)
 - [国税庁：特定親族特別控除](https://www.nta.go.jp/taxes/shiraberu/taxanswer/shotoku/1177.htm)
 - [国税庁：勤労学生控除](https://www.nta.go.jp/taxes/shiraberu/taxanswer/shotoku/1175.htm)
+- [国税庁：給与所得控除](https://www.nta.go.jp/taxes/shiraberu/taxanswer/shotoku/1410.htm)
+- [国税庁：基礎控除](https://www.nta.go.jp/taxes/shiraberu/taxanswer/shotoku/1199.htm)
+- [国税庁：特定親族特別控除](https://www.nta.go.jp/taxes/shiraberu/taxanswer/shotoku/1177.htm)
+- [国税庁：所得税率](https://www.nta.go.jp/taxes/shiraberu/taxanswer/shotoku/2260.htm)
 - [厚生労働省：「年収の壁」への対応](https://www.mhlw.go.jp/stf/taiou_001_00002.html)
 - [日本年金機構：学生納付特例制度](https://www.nenkin.go.jp/service/kokunen/menjo/20150514.html)
 - [日本年金機構：60歳到達時の納付対象月](https://www.nenkin.go.jp/service/kokunen/hokenryo/nofusho.html)
@@ -62,8 +66,8 @@ GitHub Actionsでも、`main`へのPR作成時とマージ後に同じテスト�
 
 - `index_v2.html` — 画面、入力項目、スタイル
 - `script_v2.js` — 入力の検証と画面表示
-- `calculations.js` — 画面から独立した年収・保険料計算
-- `tests/calculations.test.js` — 計算ロジックの自動テスト
+- `calculations.js` — 画面から独立した年収・税・保険計算
+- `tests/calculations.test.js` — 年収・税・保険料の境界を含む自動テスト
 - `package.json` — テスト実行コマンド
 - `.github/workflows/node-tests.yml` — PR・マージ後の自動テスト
 - `CHANGELOG.md` — 更新内容とフィードバックの記録

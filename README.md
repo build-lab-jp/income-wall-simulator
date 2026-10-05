@@ -56,6 +56,8 @@ Node.js 18以降を用意し、プロジェクトフォルダーで次を実行�
 npm test
 ```
 
+
+GitHub Actionsでも、`main`へのPR作成時とマージ後に同じテストを自動実行します。
 ## ファイル構成
 
 - `index_v2.html` — 画面、入力項目、スタイル
@@ -63,4 +65,5 @@ npm test
 - `calculations.js` — 画面から独立した年収・保険料計算
 - `tests/calculations.test.js` — 計算ロジックの自動テスト
 - `package.json` — テスト実行コマンド
+- `.github/workflows/node-tests.yml` — PR・マージ後の自動テスト
 - `CHANGELOG.md` — 更新内容とフィードバックの記録

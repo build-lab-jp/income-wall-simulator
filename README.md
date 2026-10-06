@@ -1,6 +1,6 @@
 # 大学生向け 年収・世帯手取りシミュレーター
 
-[シミュレーターを開く](https://chara75165-cmd.github.io/income-wall-simulator/)
+[シミュレーターを開く](https://build-lab-jp.github.io/income-wall-simulator/)
 
 大学生のアルバイト収入をもとに、本人の税・社会保険料や親の税控除が世帯の手取りに与える影響を概算するツールです。年収の壁に関する情報を整理し、働き方を考えるための参考として作成しています。
 

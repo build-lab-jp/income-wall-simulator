@@ -42,7 +42,6 @@
 - [国税庁：勤労学生控除](https://www.nta.go.jp/taxes/shiraberu/taxanswer/shotoku/1175.htm)
 - [国税庁：給与所得控除](https://www.nta.go.jp/taxes/shiraberu/taxanswer/shotoku/1410.htm)
 - [国税庁：基礎控除](https://www.nta.go.jp/taxes/shiraberu/taxanswer/shotoku/1199.htm)
-- [国税庁：特定親族特別控除](https://www.nta.go.jp/taxes/shiraberu/taxanswer/shotoku/1177.htm)
 - [国税庁：所得税率](https://www.nta.go.jp/taxes/shiraberu/taxanswer/shotoku/2260.htm)
 - [厚生労働省：「年収の壁」への対応](https://www.mhlw.go.jp/stf/taiou_001_00002.html)
 - [日本年金機構：学生納付特例制度](https://www.nenkin.go.jp/service/kokunen/menjo/20150514.html)
@@ -60,8 +59,8 @@ Node.js 18以降を用意し、プロジェクトフォルダーで次を実行�
 npm test
 ```
 
-
 GitHub Actionsでも、`main`へのPR作成時とマージ後に同じテストを自動実行します。
+
 ## ファイル構成
 
 - `index_v2.html` — 画面、入力項目、スタイル

@@ -10,7 +10,7 @@
         h2 { margin-top: 0; color: #0759a5; }
         .input-group { margin-top: 16px; }
         label { display: block; margin-bottom: 5px; font-weight: 600; }
-        input[type="number"], select { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #bbb; border-radius: 6px; font-size: 1rem; }
+        input[type="number"], input[type="text"], select { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #bbb; border-radius: 6px; font-size: 1rem; }
         .checkbox-section { margin-top: 20px; padding: 14px; border: 1px solid #ddd; border-radius: 8px; background: #fafafa; }
         .checkbox-group { margin-top: 10px; }
         .checkbox-group label { font-weight: normal; cursor: pointer; }
@@ -36,7 +36,7 @@
             body { margin: 0 auto; padding: 12px; line-height: 1.65; }
             .card { padding: 18px 16px; border-radius: 8px; }
             h2 { font-size: 1.35rem; line-height: 1.4; }
-            input[type="number"], select { min-height: 48px; font-size: 16px; }
+            input[type="number"], input[type="text"], select { min-height: 48px; font-size: 16px; }
             .checkbox-group label { display: flex; align-items: flex-start; gap: 10px; min-height: 44px; margin: 0; padding: 8px 0; }
             .checkbox-group input { width: 20px; height: 20px; flex: 0 0 20px; margin: 2px 0 0; }
             .criteria-help { margin-left: 30px; }
@@ -53,19 +53,19 @@
 <body>
 <div class="card">
     <h2>大学生向け 年収・世帯手取りシミュレーター</h2>
-    <p>給与収入をもとに、本人の所得税・保険料と、親の所得税控除の変化を概算します。基準年収100万円のケースと比較します。</p>
+    <p>給与収入をもとに、本人の税・保険料と、親の所得税控除への影響を概算します。</p>
 
     <form id="calculatorForm" novalidate>
     <div id="inputError" class="notice" role="alert" tabindex="-1" hidden></div>
     <div class="input-group">
         <label for="currentIncome">選択した年に受け取った給与の合計（円）</label>
-        <input type="number" id="currentIncome" min="0" step="1" required aria-describedby="inputError" inputmode="numeric" placeholder="例：900000">
+        <input type="text" id="currentIncome" required aria-describedby="inputError incomeGuidance" inputmode="numeric" pattern="[0-9,]*" autocomplete="off" placeholder="例：900,000">
         <small class="hint" id="incomeGuidance">複数のアルバイト先がある場合は合計してください。賞与なども含めます。</small>
     </div>
     <div class="input-group">
-        <label for="elapsedMonths">給与を受け取った月数（選択年）</label>
+        <label for="elapsedMonths">給与を受け取った月数</label>
         <input type="number" id="elapsedMonths" min="1" max="12" step="1" required aria-describedby="inputError" inputmode="numeric" placeholder="例：8">
-        <small class="hint" id="monthsGuidance">入力額の月平均が年末まで続くものとして予測します。</small>
+        <small class="hint" id="monthsGuidance">選んだ年に給与を受け取った月数です。1〜8月に毎月受け取った場合は「8」と入力します。</small>
     </div>
     <div class="input-group">
         <label for="ageAtYearEnd">本人の年齢（その年の12月31日時点）</label>
@@ -102,21 +102,21 @@
 
     <div class="checkbox-section">
         <strong>扶養・保険・学生控除の状況</strong>
-        <div class="checkbox-group"><label><input type="checkbox" id="isTaxDependent" checked>現在、親の税法上の扶養に入っている</label></div>
-        <details class="criteria-help"><summary>判断の目安（税法上の扶養）</summary>
-            <p>「現在」は、親が年末調整や確定申告であなたを扶養親族として申告しているかです。給与だけの場合の目安は、2025年分は16〜18歳・23歳以上が年収123万円以下、19〜22歳は150万円以下で満額控除、その後188万円まで段階的に控除が残ります。2026年分はそれぞれ136万円以下、159万円以下で満額、197万円まで段階的に控除が残ります。16歳未満は所得税の扶養控除の対象外です。</p>
+        <div class="checkbox-group"><label><input type="checkbox" id="isTaxDependent" checked>親が年末調整などで、自分を扶養親族として申告している</label></div>
+        <details class="criteria-help"><summary>確認方法と収入の目安（税法上の扶養）</summary>
+            <p><strong>確認方法：</strong>親に、年末調整や確定申告で自分を扶養親族として申告しているか聞いてください。</p><p>給与だけの場合の目安は、2025年分は16〜18歳・23歳以上が年収123万円以下、19〜22歳は150万円以下で満額控除、その後188万円まで段階的に控除が残ります。2026年分はそれぞれ136万円以下、159万円以下で満額、197万円まで段階的に控除が残ります。16歳未満は所得税の扶養控除の対象外です。</p>
             <p>年齢はその年の12月31日時点です。給与以外の所得、生計要件、親側の条件などで変わるため、親の勤務先・税務署にも確認してください。</p>
             <p><a href="https://www.nta.go.jp/taxes/shiraberu/taxanswer/shotoku/1180.htm" target="_blank" rel="noopener noreferrer">国税庁：扶養控除</a> ／ <a href="https://www.nta.go.jp/taxes/shiraberu/taxanswer/shotoku/1177.htm" target="_blank" rel="noopener noreferrer">特定親族特別控除</a></p>
         </details>
-        <div class="checkbox-group"><label><input type="checkbox" id="isHealthDependent" checked>現在、親の健康保険の被扶養者である</label></div>
-        <details class="criteria-help"><summary>判断の目安（健康保険の扶養）</summary>
-            <p>親の健康保険から「被扶養者」として認定されているかを確認します。一般には今後の年間収入見込みが130万円未満、19歳以上23歳未満（配偶者を除く）は150万円未満が目安です。同居・別居、親からの仕送り、勤務先の社会保険加入条件なども関係し、最終判断は加入先の健康保険が行います。</p>
+        <div class="checkbox-group"><label><input type="checkbox" id="isHealthDependent" checked>親の健康保険で「被扶養者」として認定されている</label></div>
+        <details class="criteria-help"><summary>確認方法と収入の目安（健康保険の扶養）</summary>
+            <p><strong>確認方法：</strong>親か保険者に、自分が「被扶養者」として登録されているか聞いてください。</p><p>一般には今後の年間収入見込みが130万円未満、19歳以上23歳未満（配偶者を除く）は150万円未満が目安です。同居・別居、親からの仕送り、勤務先の社会保険加入条件なども関係し、最終判断は加入先の健康保険が行います。</p>
             <p>このチェックは「現在の認定状況」です。2026年4月以降は労働契約内容による収入見込みで認定する取扱いも始まっています。</p>
             <p><a href="https://www.nenkin.go.jp/service/kounen/tekiyo/hihokensha1/20141202.html" target="_blank" rel="noopener noreferrer">日本年金機構：家族を被扶養者にするとき</a> ／ <a href="https://www.nenkin.go.jp/oshirase/taisetu/jigyosho/2026/202605/0501.html" target="_blank" rel="noopener noreferrer">労働契約内容による年間収入の取扱い</a></p>
         </details>
-        <div class="checkbox-group"><label><input type="checkbox" id="isCompanyInsured">勤務先の健康保険・厚生年金に加入済み、または加入が確定している</label></div>
-        <details class="criteria-help"><summary>判断の目安（勤務先の社会保険）</summary>
-            <p>勤務先から加入資格の通知を受けている、または加入日が確定している場合にチェックします。親の健康保険の扶養とは別の判定です。加入要件を満たすか分からない場合は、勤務先に確認してください。</p>
+        <div class="checkbox-group"><label><input type="checkbox" id="isCompanyInsured">勤務先の健康保険・厚生年金に加入している（加入日が決まっている）</label></div>
+        <details class="criteria-help"><summary>確認方法（勤務先の社会保険）</summary>
+            <p><strong>確認方法：</strong>勤務先からの資格取得通知などで加入開始日を確認してください。加入開始月が分かったら、下の月ごとの欄も選びます。親の健康保険の扶養とは別の判定です。</p><p>加入要件を満たすか分からない場合は、勤務先に確認してください。</p>
             <p>短時間労働者は、対象となる事業所で週の所定労働時間が20時間以上などの要件があります。2026年10月1日から、月額8万8千円以上の賃金要件は撤廃されました。短時間労働者については学生が原則対象外ですが、休学中・定時制・通信制など対象となる場合もあります。通常の労働者の4分の3以上働く場合など、別の加入条件もあります。</p>
             <p><a href="https://www.nenkin.go.jp/oshirase/taisetu/jigyosho/2026/202610/100104.html" target="_blank" rel="noopener noreferrer">日本年金機構：2026年10月の賃金要件撤廃</a> ／ <a href="https://www.nenkin.go.jp/section/faq/kounen/tekiyoukakudai/tanjikan/gakusei02.html" target="_blank" rel="noopener noreferrer">日本年金機構：短時間労働者の学生要件</a></p>
         </details>
@@ -130,14 +130,14 @@
             <p>年末時点で20歳または60歳の方に限り、誕生月と「誕生日が1日」かどうかを入力してください。20歳到達時は対象開始月、60歳到達時は対象終了月を見積もります。選択した勤務先の社会保険加入月は国民年金の対象月から除きます。海外居住等は考慮していません。</p>
             <p><a href="https://www.nenkin.go.jp/service/scenebetsu/hatachi.html" target="_blank" rel="noopener noreferrer">日本年金機構：20歳になったときの国民年金の手続き</a></p>
         </details>
-        <div class="checkbox-group"><label><input type="checkbox" id="isStudentExemption">学生納付特例が承認済み、または承認される前提で試算する</label></div>
-        <details class="criteria-help"><summary>判断の目安（学生納付特例）</summary>
-            <p>20歳以上の学生が申請できます。本人の前年所得などを審査し、家族の所得は審査対象ではありません。申請・承認がまだなら、実際に猶予されるとは限りません。これは免除ではなく納付猶予で、後から追納できます。</p>
+        <div class="checkbox-group"><label><input type="checkbox" id="isStudentExemption">学生納付特例を使う前提で試算する</label></div>
+        <details class="criteria-help"><summary>利用状況の確認（学生納付特例）</summary>
+            <p><strong>確認方法：</strong>承認通知が届いていればチェックします。申請中なら、承認される前提で試算する場合にチェックしてください。</p><p>20歳以上の学生が申請できます。本人の前年所得などを審査し、家族の所得は審査対象ではありません。これは免除ではなく納付猶予で、後から追納できます。</p>
             <p><a href="https://www.nenkin.go.jp/service/kokunen/menjo/20150514.html" target="_blank" rel="noopener noreferrer">日本年金機構：学生納付特例制度</a></p>
         </details>
-        <div class="checkbox-group"><label><input type="checkbox" id="isWorkStudent" checked>勤労学生控除の対象要件を満たす（給与以外の所得なども確認済み）</label></div>
-        <details class="criteria-help"><summary>判断の目安（勤労学生控除）</summary>
-            <p>学校の要件を満たす学生で、勤労による所得があり、給与以外の所得が10万円以下であることなどが必要です。合計所得金額の上限は2025年分85万円以下、2026年分89万円以下（給与だけなら目安はそれぞれ年収150万円以下、163万円以下）です。</p>
+        <div class="checkbox-group"><label><input type="checkbox" id="isWorkStudent" checked>勤労学生控除を使う前提で試算する</label></div>
+        <details class="criteria-help"><summary>確認方法と収入の目安（勤労学生控除）</summary>
+            <p><strong>確認方法：</strong>対象校に通い、給与以外の所得が少ないことなどが条件です。迷ったらチェックを外した結果とも比べてください。</p><p>学校の要件を満たす学生で、勤労による所得があり、給与以外の所得が10万円以下であることなどが必要です。合計所得金額の上限は2025年分85万円以下、2026年分89万円以下（給与だけなら目安はそれぞれ年収150万円以下、163万円以下）です。</p>
             <p>チェックすると27万円の控除を試算します。学校や所得の条件を確認できない場合は、チェックを外して結果を比べてください。</p>
             <p><a href="https://www.nta.go.jp/taxes/shiraberu/taxanswer/shotoku/1175.htm" target="_blank" rel="noopener noreferrer">国税庁：勤労学生控除</a></p>
         </details>
@@ -155,13 +155,13 @@
         <div id="personalResultText" class="result-box"></div>
         <div class="section-title">親の税控除への影響</div>
         <div id="parentResultText" class="result-box"></div>
-        <div class="section-title">世帯の手取り増減</div>
+        <div class="section-title">本人の収入による世帯への影響</div>
         <div id="householdResultText" class="result-box"></div>
         <div class="section-title">試算の前提・対象外</div>
         <div class="result-box">
             <ul>
                 <li>入力した年初から現在までの給与を、受取月数で割って12か月分に換算し、年収を予測します。今後のシフト変更や賞与の増減は予測に反映しません。</li>
-                <li>本人の所得税・保険料と親の所得税の変化を、給与収入のみの前提で概算します。世帯手取りの比較基準は年収100万円です。</li>
+                <li>本人の所得税・保険料と親の所得税の変化を、給与収入のみの前提で概算します。世帯への影響は、本人の手取り参考額から親の所得税・復興特別所得税の増加見込みを差し引いて概算します。</li>
                 <li>住民税、親の住民税、国民健康保険の自治体別・前年所得に基づく実額、勤務先の実際の保険料率や標準報酬月額は再現しません。勤務先保険は年収を12等分した月収の約15%を加入月分だけ計上し、国保の簡易年額は未加入月数分に按分します。国民年金は年齢に応じた対象月のうち、勤務先の厚生年金に加入していない月分を計上します。</li>
                 <li>扶養や勤務先の社会保険の加入可否は、年収だけでは決まりません。実際の条件は勤務先や加入する健康保険に確認してください。</li>
                 <li>学生納付特例は申請・審査が必要な納付猶予です。追納する場合の将来負担はこの試算に含みません。</li>

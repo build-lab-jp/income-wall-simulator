@@ -1,5 +1,6 @@
 const calculatorForm = document.getElementById('calculatorForm');
 const inputError = document.getElementById('inputError');
+const currentIncomeInput = document.getElementById('currentIncome');
 const ageInput = document.getElementById('ageAtYearEnd');
 const birthGroup = document.getElementById('birthMonthGroup');
 const birthMonthSelect = document.getElementById('birthMonth');
@@ -25,6 +26,22 @@ for (let month = 1; month <= 12; month++) {
     companyInsuranceMonthChecks.append(monthLabel);
 }
 
+function formatIncomeInput(event) {
+    const input = event.currentTarget;
+    const cursor = input.selectionStart ?? input.value.length;
+    const digitsBeforeCursor = input.value.slice(0, cursor).replace(/\D/g, '').length;
+    const digits = input.value.replace(/\D/g, '');
+    const formatted = digits.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    input.value = formatted;
+
+    let nextCursor = 0;
+    let digitsPassed = 0;
+    while (nextCursor < formatted.length && digitsPassed < digitsBeforeCursor) {
+        if (/\d/.test(formatted[nextCursor])) digitsPassed++;
+        nextCursor++;
+    }
+    input.setSelectionRange(nextCursor, nextCursor);
+}
 function updateBirthMonthVisibility() {
     const needsBirthMonth = ageInput.value === '20' || ageInput.value === '60';
     birthGroup.hidden = !needsBirthMonth;
@@ -42,13 +59,13 @@ function updateIncomeGuidance() {
     const currentYear = new Date().getFullYear();
     if (selectedYear === currentYear) {
         incomeGuidance.textContent = `${selectedYear}年1月から現在までに受け取った給与を入力してください。複数の勤務先や賞与も合計します。`;
-        monthsGuidance.textContent = `これまでに給与を受け取った月数を入力してください。入力額の月平均が年末まで続く想定で予測します。`;
+        monthsGuidance.textContent = `給与が振り込まれた月の数です（例：1〜8月に毎月受け取ったなら8か月）。入力した月平均が年末まで続く想定で予測します。`;
     } else if (selectedYear < currentYear) {
         incomeGuidance.textContent = `${selectedYear}年分の試算です。複数の勤務先や賞与を含め、その年に受け取った給与を入力してください。`;
-        monthsGuidance.textContent = `年間の実績を入力する場合は12か月にしてください。年途中までの累計から予測する場合は、その時点までの月数を入力します。`;
+        monthsGuidance.textContent = `年間の実績なら12か月です。年途中までの累計から予測する場合は、給与が振り込まれた月数を入力してください。`;
     } else {
         incomeGuidance.textContent = `${selectedYear}年分の試算です。予測したい給与額を入力してください。複数の勤務先や賞与も合計します。`;
-        monthsGuidance.textContent = `予測額の月平均が12か月続くものとして年収を計算します。`;
+        monthsGuidance.textContent = `給与を受け取る予定の月数です（1〜12か月）。月平均がその年の12か月続く想定で計算します。`;
     }
 }
 
@@ -62,6 +79,7 @@ function showInputError(message, focusTarget) {
 ageInput.addEventListener('input', updateBirthMonthVisibility);
 taxYearSelect.addEventListener('change', updateIncomeGuidance);
 companyInsuranceCheckbox.addEventListener('change', updateCompanyInsuranceVisibility);
+currentIncomeInput.addEventListener('input', formatIncomeInput);
 calculatorForm.addEventListener('input', () => showInputError(''));
 calculatorForm.addEventListener('change', () => showInputError(''));
 calculatorForm.addEventListener('submit', calculateV2);
@@ -72,6 +90,8 @@ calculatorForm.addEventListener('reset', () => {
         updateIncomeGuidance();
         updateCompanyInsuranceVisibility();
         document.getElementById('resultV2').style.display = 'none';
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
     }, 0);
 });
 updateBirthMonthVisibility();
@@ -83,7 +103,7 @@ function calculateV2(event) {
     showInputError('');
     const incomeText = document.getElementById('currentIncome').value.trim();
     const monthsText = document.getElementById('elapsedMonths').value.trim();
-    const incomeToDate = Number(incomeText);
+    const incomeToDate = Number(incomeText.replace(/,/g, ''));
     const monthsElapsed = Number(monthsText);
     const ageText = document.getElementById('ageAtYearEnd').value.trim();
     const ageAtYearEnd = Number(ageText);
@@ -128,7 +148,6 @@ function calculateV2(event) {
 
     const projectedIncome = IncomeWallCalculations.projectAnnualIncome(incomeToDate, monthsElapsed);
     const averageMonthly = Math.round(incomeToDate / monthsElapsed);
-    const baselineIncome = 1000000;
     const yen = value => `${Math.round(value).toLocaleString('ja-JP')}円`;
 
     function calculatePersonal(gross) {
@@ -170,16 +189,11 @@ function calculateV2(event) {
     }
 
     const personal = calculatePersonal(projectedIncome);
-    const baseline = calculatePersonal(baselineIncome);
-    const parentDeductionAtBaseline = IncomeWallCalculations.calculateParentDeduction(baselineIncome, { isTaxDependent, ageGroup, taxYear });
+    const parentDeductionAtNoIncome = IncomeWallCalculations.calculateParentDeduction(0, { isTaxDependent, ageGroup, taxYear });
     const parentDeductionCurrent = IncomeWallCalculations.calculateParentDeduction(projectedIncome, { isTaxDependent, ageGroup, taxYear });
-    const parentDeductionLoss = Math.max(0, parentDeductionAtBaseline - parentDeductionCurrent);
+    const parentDeductionLoss = Math.max(0, parentDeductionAtNoIncome - parentDeductionCurrent);
     const parentIncomeTaxIncrease = IncomeWallCalculations.estimateParentIncomeTaxIncrease(parentDeductionLoss, parentTaxRate);
-    const householdNetAtBaseline = baseline.net;
-    const householdNetCurrent = personal.net - parentIncomeTaxIncrease;
-    const incomeIncrease = projectedIncome - baselineIncome;
-    const netIncrease = householdNetCurrent - householdNetAtBaseline;
-    const offsetByTaxAndInsurance = incomeIncrease - netIncrease;
+    const householdImpact = personal.net - parentIncomeTaxIncrease;
 
     const personalHtml = [
         `<p>年収予測：<strong>${yen(projectedIncome)}</strong>（現在の月平均 ${yen(averageMonthly)} が続く想定）</p>`,
@@ -199,22 +213,16 @@ function calculateV2(event) {
     } else if (ageGroup === 'under16') {
         parentStatus = '15歳以下は所得税の扶養控除による親の税額差をこの試算では計上していません。';
     } else {
-        parentStatus = `基準年収時の控除 ${yen(parentDeductionAtBaseline)} → 予測年収時の控除 ${yen(parentDeductionCurrent)}。`;
+        parentStatus = '給与収入がない場合の控除 ' + yen(parentDeductionAtNoIncome) + ' → 予測年収時の控除 ' + yen(parentDeductionCurrent) + '。';
     }
     const parentHtml = `<p>${parentStatus}</p><p>親の所得税・復興特別所得税の増加見込み：<strong>${yen(parentIncomeTaxIncrease)}</strong></p><p class="notice">選択した親の限界税率を使った概算です。親の住民税は含みません。70歳以上は同居老親等以外の控除額で計算しています。同居老親等に該当する場合は実額と異なります。</p>`;
 
-    let comparisonHtml = `<p>基準年収 ${yen(baselineIncome)} からの収入増：${incomeIncrease >= 0 ? '+' : ''}${yen(incomeIncrease)}</p>` +
-        `<p>世帯の手取り増減（概算）：<strong>${netIncrease >= 0 ? '+' : ''}${yen(netIncrease)}</strong></p>`;
-    if (incomeIncrease > 0 && netIncrease <= 0) {
-        comparisonHtml += `<p class="notice"><strong>負担が収入増を上回る可能性</strong>があります。税・保険料等による相殺額の目安は ${yen(offsetByTaxAndInsurance)} です。</p>`;
-    } else if (incomeIncrease > 0 && offsetByTaxAndInsurance > 0) {
-        comparisonHtml += `<p>税・保険料等による相殺額の目安：${yen(offsetByTaxAndInsurance)}</p>`;
-    } else if (incomeIncrease <= 0) {
-        comparisonHtml += `<p class="notice">予測年収が比較基準以下のため、相殺額評価の対象外です。</p>`;
-    } else {
-        comparisonHtml += `<p>この条件では、基準ケースからの世帯手取り増が収入増を下回っていません。</p>`;
-    }
-    comparisonHtml += `<p class="notice">比較では、本人の所得税と保険料、親の所得税差を反映しています。住民税や自治体別の保険料、賞与・シフト変動は含みません。</p>`;
+
+    const comparisonHtml =
+        '<p>本人の手取り参考額：' + yen(personal.net) + '</p>' +
+        '<p>親の所得税・復興特別所得税の増加見込み：−' + yen(parentIncomeTaxIncrease) + '</p>' +
+        '<p><strong>本人の収入による世帯への手取り影響（概算）：' + (householdImpact >= 0 ? '+' : '') + yen(householdImpact) + '</strong></p>' +
+        '<p class="notice">本人の手取り参考額から、親の所得税・復興特別所得税の増加見込みを差し引いた目安です。親の給与や住民税、自治体別の保険料は含みません。</p>';
 
     document.getElementById('personalResultText').innerHTML = personalHtml;
     document.getElementById('parentResultText').innerHTML = parentHtml;
